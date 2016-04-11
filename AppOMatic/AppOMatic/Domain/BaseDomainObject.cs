@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 // ReSharper disable UnusedParameter.Global
@@ -9,7 +10,7 @@ namespace AppOMatic.Domain
 	{
 		public string Name { get; set; }
 
-		protected virtual void Validate()
+		internal virtual void Validate()
 		{
 			ValidateNullOrEmpty(Name, nameof(Name));
 		}
@@ -37,6 +38,27 @@ namespace AppOMatic.Domain
 			if(value.Equals(forbiddenValue))
 			{
 				throw new ArgumentOutOfRangeException($"{GetType().Name}.{propertyName} should have any value except [{forbiddenValue}]");
+			}
+		}
+
+		protected void ValidateIsNotEmpty<T>(IList<T> list, string propertyName)
+		{
+			if(list == null)
+			{
+				throw new ArgumentNullException($"{GetType().Name}.{propertyName} should not be null");
+			}
+
+			if(list.Count == 0)
+			{
+				throw new ArgumentException($"{GetType().Name}.{propertyName} should not be empty");
+			}
+		}
+
+		protected static void ValidateChildren(IEnumerable<BaseDomainObject> children)
+		{
+			foreach(var child in children)
+			{
+				child.Validate();
 			}
 		}
 	}
