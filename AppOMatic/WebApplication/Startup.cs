@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
+
 // ReSharper disable UnusedParameter.Local
 
 namespace WebApplication
@@ -57,6 +58,6 @@ namespace WebApplication
 		}
 
 		// Entry point for the application.
-		public static void Main(string[] args) => WebApplication.Run<Startup>(args);
+		public static void Main(string[] args) => Microsoft.AspNet.Hosting.WebApplication.Run<Startup>(args);
 	}
 }
