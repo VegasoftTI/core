@@ -1,9 +1,10 @@
-﻿using Microsoft.AspNet.Builder;
+﻿using AppOMatic.Domain;
+using Microsoft.AspNet.Builder;
 using Microsoft.AspNet.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-
+using WebApplication.Api;
 
 // ReSharper disable UnusedParameter.Local
 
@@ -46,14 +47,15 @@ namespace WebApplication
 				app.UseExceptionHandler("/Home/Error");
 			}
 
+			// Add api-o-matic applications
+			app.UseApiOMaticApplication(new SampleApiApplication());
+
 			app.UseIISPlatformHandler();
 			app.UseStaticFiles();
 
 			app.UseMvc(routes =>
 			{
-				routes.MapRoute(
-					name: "default",
-					template: "{controller=Home}/{action=Index}/{id?}");
+				routes.MapRoute(name: "default", template: "{controller=Home}/{action=Index}/{id?}");
 			});
 		}
 

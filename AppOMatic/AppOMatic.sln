@@ -10,6 +10,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		WebApplication\global.json = WebApplication\global.json
 	EndProjectSection
 EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "AppOMatic", "AppOMatic\AppOMatic.xproj", "{49393199-0358-4CD1-BBF7-84CFA0DB1CD5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -20,6 +22,10 @@ Global
 		{D797DBCC-FA45-4780-B9D2-8EEFB186C5E1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D797DBCC-FA45-4780-B9D2-8EEFB186C5E1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D797DBCC-FA45-4780-B9D2-8EEFB186C5E1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{49393199-0358-4CD1-BBF7-84CFA0DB1CD5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{49393199-0358-4CD1-BBF7-84CFA0DB1CD5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{49393199-0358-4CD1-BBF7-84CFA0DB1CD5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{49393199-0358-4CD1-BBF7-84CFA0DB1CD5}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

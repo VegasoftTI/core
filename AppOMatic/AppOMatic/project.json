@@ -1,0 +1,29 @@
+{
+	"version": "1.0.0-*",
+	"description": "AppOMatic Class Library",
+	"authors":
+	[
+		"jckodel@gmail.com"
+	],
+	"tags":
+	[
+		""
+	],
+	"projectUrl": "",
+	"licenseUrl": "",
+
+	"dependencies":
+	{
+		"Microsoft.AspNet.Http.Abstractions": "1.0.0-rc1-final",
+		"Microsoft.Extensions.Configuration.FileProviderExtensions": "1.0.0-rc1-final",
+		"Microsoft.Extensions.Configuration.Json": "1.0.0-rc1-final",
+		"Microsoft.Extensions.Logging": "1.0.0-rc1-final"
+	},
+
+	"frameworks":
+	{
+		"dnxcore50":
+		{
+		}
+	}
+}
