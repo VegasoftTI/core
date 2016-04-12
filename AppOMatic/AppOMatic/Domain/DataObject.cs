@@ -1,9 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using AppOMatic.Extensions;
 using Microsoft.AspNet.Http;
 using Newtonsoft.Json;
+using System.Linq;
 
 namespace AppOMatic.Domain
 {
@@ -37,7 +39,19 @@ namespace AppOMatic.Domain
 
 		private static object ParseObject(string value)
 		{
-			return JsonConvert.DeserializeObject(value);
+			var ovalue = JsonConvert.DeserializeObject(value);
+
+			if(ovalue is long)
+			{
+				var lvalue = (long)ovalue;
+
+				if(lvalue >= int.MinValue && lvalue <= int.MaxValue)
+				{
+					return Convert.ToInt32(lvalue);
+				}
+			}
+
+			return ovalue;
 		}
 
 		private static object[] ParseArray(string[] values)
@@ -115,6 +129,27 @@ namespace AppOMatic.Domain
 			{
 				Headers[header.Key] = string.Join(";", header.Value);
 			}
+		}
+
+		public T Get<T>(string key, T defaultValue = default(T))
+		{
+			object value;
+
+			if(TryGetValue(key, out value))
+			{
+				return (T)value;
+			}
+
+			key = key.ToLower();
+
+			var ek = Keys.FirstOrDefault(i => i.ToLower() == key);
+
+			if(ek != null)
+			{
+				return (T)this[ek];
+			}
+
+			return defaultValue;
 		}
 	}
 }
