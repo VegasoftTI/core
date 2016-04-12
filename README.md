@@ -11,18 +11,18 @@ Id	Title	Completed
 
  2. Startup.cs:
 
-<code>
+<pre>
 public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
 {
 	...
 	app.UseApiOMaticApplication(new SampleApiApplication(Configuration["Data:DefaultConnection:ConnectionString"]));
 	...
 }
-</code>
+</pre>
 
 3. Application settings:
 
-<code>
+<pre>
 public sealed class SampleApiApplication : Application
 {
 	public SampleApiApplication(string connectionString)
@@ -50,7 +50,7 @@ public sealed class ToDoEndPoint : EndPoint
 		};
 	}
 }
-</code>
+</pre>
 
 4. Calling http://localhost/SampleApi/1.0.0/development/todo?pageSize=2&pageNumber=1
 
