@@ -4,9 +4,14 @@ namespace WebApplication.Api
 {
 	public sealed class ToDoEndPoint : EndPoint
 	{
-		public ToDoEndPoint()
+		public ToDoEndPoint(string connectionString)
 		{
 			Name = "ToDo";
+
+			Steps = new Step[]
+			{
+				new SqlServerTableStep { Name = "ToDo", ConnectionString = connectionString },
+			};
 		}
 	}
 }

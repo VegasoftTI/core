@@ -48,7 +48,7 @@ namespace WebApplication
 			}
 
 			// Add api-o-matic applications
-			app.UseApiOMaticApplication(new SampleApiApplication());
+			app.UseApiOMaticApplication(new SampleApiApplication(Configuration["Data:DefaultConnection:ConnectionString"]));
 
 			app.UseIISPlatformHandler();
 			app.UseStaticFiles();

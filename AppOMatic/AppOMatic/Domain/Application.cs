@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Microsoft.AspNet.Http;
 
 namespace AppOMatic.Domain
@@ -24,7 +23,7 @@ namespace AppOMatic.Domain
 			}
 		}
 
-		public List<EndPoint> EndPoints { get; set; }
+		public EndPoint[] EndPoints { get; set; }
 
 		internal override void Validate()
 		{
@@ -45,7 +44,7 @@ namespace AppOMatic.Domain
 			{
 				if(endPoint.Route == path)
 				{
-					await endPoint.HandleAsync(context).ConfigureAwait(false);
+					await endPoint.HandleAsync(context).ConfigureAwait(true);
 					return true;
 				}
 			}

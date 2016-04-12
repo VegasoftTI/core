@@ -1,19 +1,18 @@
-﻿using System.Collections.Generic;
-using AppOMatic.Domain;
+﻿using AppOMatic.Domain;
 
 namespace WebApplication.Api
 {
     public sealed class SampleApiApplication : Application
     {
-	    public SampleApiApplication()
+	    public SampleApiApplication(string connectionString)
 	    {
 		    Name = "SampleApi";
 		    Version = "1.0.0";
 		    LifecycleStage = ApplicationLifecycleStage.Development;
 
-		    EndPoints = new List<EndPoint>
+		    EndPoints = new EndPoint[]
 		    {
-			    new ToDoEndPoint(),
+			    new ToDoEndPoint(connectionString),
 		    };
 	    }
     }

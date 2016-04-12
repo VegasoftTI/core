@@ -1,6 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
+using Microsoft.AspNet.Http;
+using Newtonsoft.Json;
 
 // ReSharper disable UnusedParameter.Global
 
@@ -9,6 +13,14 @@ namespace AppOMatic.Domain
 	public abstract class BaseDomainObject
 	{
 		public string Name { get; set; }
+
+		internal static Task WriteErrorResponseAsync(HttpContext context, HttpStatusCode statusCode)
+		{
+			context.Response.StatusCode = (int)statusCode;
+			context.Response.ContentType = "application/json";
+
+			return context.Response.WriteAsync(JsonConvert.SerializeObject(new { statusCode = statusCode, message = statusCode.ToString() }));
+		}
 
 		internal virtual void Validate()
 		{
