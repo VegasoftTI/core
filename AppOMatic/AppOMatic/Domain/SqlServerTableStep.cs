@@ -4,11 +4,14 @@ using System.Data.SqlClient;
 using System.Net;
 using System.Threading.Tasks;
 using AppOMatic.Extensions;
+using System.Linq;
 
 namespace AppOMatic.Domain
 {
 	public class SqlServerTableStep : Step
 	{
+		private static readonly Dictionary<string, List<string>> _databaseSchema = new Dictionary<string, List<string>>();
+
 		public string ConnectionString { get; set; }
 
 		internal override void Validate()
@@ -85,17 +88,45 @@ namespace AppOMatic.Domain
 		{
 			var command = (SqlCommand)endPointContext[$"SqlServerTableStep:{ConnectionString}"];
 
-			if(dobj.ContainsKey("id"))
+			switch(dobj.Method)
 			{
-				await FetchByIdAsync(dobj, command).ConfigureAwait(false);
-			}
-			else if(dobj.ContainsKey("pageSize"))
-			{
-				await FetchPageAsync(dobj, command).ConfigureAwait(false);
-			}
-			else
-			{
-				await FetchAllAsync(dobj, command).ConfigureAwait(false);
+				case RequestMethod.CreateItem:
+					await CreateItemAsync(dobj, command).ConfigureAwait(false);
+					break;
+				case RequestMethod.CreateList:
+					await CreateItemsAsync(dobj, command).ConfigureAwait(false);
+					break;
+				case RequestMethod.DeleteItem:
+					throw new NotImplementedException();
+					break;
+				case RequestMethod.DeleteList:
+					throw new NotImplementedException();
+					break;
+				case RequestMethod.ReplaceItem:
+					throw new NotImplementedException();
+					break;
+				case RequestMethod.ReplaceList:
+					throw new NotImplementedException();
+					break;
+				case RequestMethod.RetrieveItem:
+					await FetchByIdAsync(dobj, command).ConfigureAwait(false);
+					break;
+				case RequestMethod.RetrieveList:
+					if(dobj.ContainsKey("pageSize"))
+					{
+						await FetchPageAsync(dobj, command).ConfigureAwait(false);
+					}
+					else
+					{
+						await FetchAllAsync(dobj, command).ConfigureAwait(false);
+					}
+					break;
+				case RequestMethod.UpdateItem:
+					throw new NotImplementedException();
+					break;
+				case RequestMethod.UpdateList:
+					throw new NotImplementedException();
+					break;
 			}
 		}
 
@@ -108,6 +139,8 @@ namespace AppOMatic.Domain
 				command.Parameters.AddWithValue(item.Key, item.Value);
 			}
 		}
+
+		#region Retrieve
 
 		protected virtual void PrepareFetchByIdQuery(DataObject dobj, SqlCommand command)
 		{
@@ -224,5 +257,92 @@ namespace AppOMatic.Domain
 			dobj["items"] = result;
 			dobj.ResultStatusCode = result.Count > 0 ? HttpStatusCode.OK : HttpStatusCode.NoContent;
 		}
+
+		#endregion
+
+		#region Create
+
+		private async Task<List<string>> GetTableColumnsAsync(SqlCommand command)
+		{
+			var columnsKey = $"{ConnectionString}:{Name}";
+			List<string> columns;
+
+			if(_databaseSchema.TryGetValue(columnsKey, out columns) == false)
+			{
+				command.CommandText = "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = @tableName ORDER BY ORDINAL_POSITION";
+				command.Parameters.Clear();
+				command.Parameters.AddWithValue("tableName", Name);
+				columns = new List<string>();
+
+				using(var dr = await command.ExecuteReaderAsync().ConfigureAwait(false))
+				{
+					while(await dr.ReadAsync().ConfigureAwait(false))
+					{
+						columns.Add(dr.GetString(0));
+					}
+				}
+
+				_databaseSchema[columnsKey] = columns;
+			}
+
+			return columns;
+		}
+
+		protected virtual void PrepareCreateItemQuery(DataObject dobj, SqlCommand command, List<string> columns)
+		{
+			var cols = new List<string>();
+
+			foreach(var col in columns)
+			{
+				if(dobj.Keys.Any(c => string.Equals(c, col, StringComparison.CurrentCultureIgnoreCase)))
+				{
+					cols.Add(col);
+				}
+			}
+
+			command.CommandText = string.Format("INSERT INTO [{0}] ({1}) OUTPUT INSERTED.Id VALUES ({2})", Name, string.Join(", ", cols), string.Join(", ", cols.Select(s => "@" + s)));
+			PrepareParameters(dobj, command);
+		}
+
+		private async Task CreateItemAsync(DataObject dobj, SqlCommand command)
+		{
+			var columns = await GetTableColumnsAsync(command).ConfigureAwait(false);
+
+			PrepareCreateItemQuery(dobj, command, columns);
+
+			var insertedId = await command.ExecuteScalarAsync().ConfigureAwait(false);
+
+			dobj["id"] = insertedId;
+		}
+
+		private async Task CreateItemsAsync(DataObject dobj, SqlCommand command)
+		{
+			var columns = await GetTableColumnsAsync(command).ConfigureAwait(false);
+			var items = dobj.GetArray("items");
+
+			if(items == null)
+			{
+				return;
+			}
+
+			foreach(var item in items)
+			{
+				var d = new DataObject();
+
+				foreach(var kv in item)
+				{
+					d[kv.Key] = kv.Value;
+				}
+
+				PrepareCreateItemQuery(d, command, columns);
+
+				item["id"] = await command.ExecuteScalarAsync().ConfigureAwait(false);
+			}
+
+			dobj["items"] = items;
+		}
+
+		#endregion
+
 	}
 }

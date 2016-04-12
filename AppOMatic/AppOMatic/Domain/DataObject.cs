@@ -6,6 +6,7 @@ using AppOMatic.Extensions;
 using Microsoft.AspNet.Http;
 using Newtonsoft.Json;
 using System.Linq;
+using Newtonsoft.Json.Linq;
 
 namespace AppOMatic.Domain
 {
@@ -150,6 +151,32 @@ namespace AppOMatic.Domain
 			}
 
 			return defaultValue;
+		}
+
+		public List<Dictionary<string, object>> GetArray(string key)
+		{
+			object value;
+
+			if(TryGetValue(key, out value) == false)
+			{
+				return null;
+			}
+
+			var a = value as JArray;
+
+			if(a == null)
+			{
+				return null;
+			}
+
+			var result = new List<Dictionary<string, object>>();
+
+			foreach(var item in a)
+			{
+				result.Add(item.ToObject<Dictionary<string, object>>());
+			}
+
+			return result;
 		}
 	}
 }
