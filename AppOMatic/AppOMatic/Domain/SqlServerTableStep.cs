@@ -66,17 +66,20 @@ namespace AppOMatic.Domain
 			var transaction = command.Transaction;
 			var connection = command.Connection;
 
-			if(runException != null)
+			if(command.Transaction != null)
 			{
-				command.Transaction.Rollback();
-			}
-			else
-			{
-				command.Transaction.Commit();
+				if(runException != null)
+				{
+					command.Transaction.Rollback();
+				}
+				else
+				{
+					command.Transaction.Commit();
+				}
 			}
 
 			command.Dispose();
-			transaction.Dispose();
+			transaction?.Dispose();
 			connection.Dispose();
 
 			endPointContext.Remove(key);
