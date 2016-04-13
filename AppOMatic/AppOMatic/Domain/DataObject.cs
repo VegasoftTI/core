@@ -40,19 +40,26 @@ namespace AppOMatic.Domain
 
 		private static object ParseObject(string value)
 		{
-			var ovalue = JsonConvert.DeserializeObject(value);
-
-			if(ovalue is long)
+			try
 			{
-				var lvalue = (long)ovalue;
+				var ovalue = JsonConvert.DeserializeObject(value);
 
-				if(lvalue >= int.MinValue && lvalue <= int.MaxValue)
+				if(ovalue is long)
 				{
-					return Convert.ToInt32(lvalue);
-				}
-			}
+					var lvalue = (long) ovalue;
 
-			return ovalue;
+					if(lvalue >= int.MinValue && lvalue <= int.MaxValue)
+					{
+						return Convert.ToInt32(lvalue);
+					}
+				}
+
+				return ovalue;
+			}
+			catch(JsonReaderException)
+			{
+				return value;
+			}
 		}
 
 		private static object[] ParseArray(string[] values)

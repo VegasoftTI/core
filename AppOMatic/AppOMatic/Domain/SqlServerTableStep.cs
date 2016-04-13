@@ -177,7 +177,13 @@ namespace AppOMatic.Domain
 
 		protected virtual void PrepareFetchByIdQuery(DataObject dobj, SqlCommand command)
 		{
-			command.CommandText = $"SELECT TOP 1 * FROM [{Name}] WHERE [Id] = @id";
+			var selectBuilder = new SelectBuilder(dobj);
+
+			selectBuilder.Select("TOP 1 *");
+			selectBuilder.From($"[{Name}]");
+			selectBuilder.Where("[Id] = @id");
+
+			command.CommandText = selectBuilder.ToString();
 			PrepareParameters(dobj, command);
 		}
 
@@ -217,7 +223,18 @@ namespace AppOMatic.Domain
 		{
 			var skip = (pageNumber - 1) * pageSize;
 
-			command.CommandText = $"SELECT COUNT(*) FROM [{Name}]; SELECT * FROM [{Name}] ORDER BY [Id] OFFSET {skip} ROWS FETCH NEXT {pageSize} ROWS ONLY";
+			var selectBuilder = new SelectBuilder(dobj);
+
+			selectBuilder.Select("COUNT(*)");
+			selectBuilder.From($"[{Name}]");
+
+			var countRowsQuery = selectBuilder.ToString();
+
+			selectBuilder.Select("*");
+			selectBuilder.Skip(skip);
+			selectBuilder.Fetch(pageSize);
+
+			command.CommandText = countRowsQuery + "; " + selectBuilder;
 			PrepareParameters(dobj, command);
 		}
 
@@ -269,13 +286,23 @@ namespace AppOMatic.Domain
 
 		protected virtual void PrepareFetchAllQuery(DataObject dobj, SqlCommand command)
 		{
-			command.CommandText = $"SELECT * FROM [{Name}]";
+			var selectBuilder = new SelectBuilder(dobj);
+
+			selectBuilder.Select("*");
+			selectBuilder.From($"[{Name}]");
+
+			command.CommandText = selectBuilder.ToString();
 			PrepareParameters(dobj, command);
 		}
 
 		protected virtual void PrepareCountQuery(DataObject dobj, SqlCommand command)
 		{
-			command.CommandText = $"SELECT COUNT(*) FROM [{Name}]";
+			var selectBuilder = new SelectBuilder(dobj);
+
+			selectBuilder.Select("COUNT(*)");
+			selectBuilder.From($"[{Name}]");
+
+			command.CommandText = selectBuilder.ToString();
 			PrepareParameters(dobj, command);
 		}
 

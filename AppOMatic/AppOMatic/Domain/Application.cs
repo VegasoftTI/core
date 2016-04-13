@@ -1,4 +1,6 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Net;
+using System.Threading.Tasks;
 using Microsoft.AspNet.Http;
 
 namespace AppOMatic.Domain
@@ -44,7 +46,15 @@ namespace AppOMatic.Domain
 			{
 				if(endPoint.Route == path)
 				{
-					await endPoint.HandleAsync(context).ConfigureAwait(true);
+					try
+					{
+						await endPoint.HandleAsync(context).ConfigureAwait(true);
+					}
+					catch(Exception ex)
+					{
+						await WriteErrorResponseAsync(context, ex).ConfigureAwait(false);
+					}
+
 					return true;
 				}
 			}

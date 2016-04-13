@@ -22,6 +22,14 @@ namespace AppOMatic.Domain
 			return context.Response.WriteAsync(JsonConvert.SerializeObject(new { statusCode = statusCode, message = statusCode.ToString() }));
 		}
 
+		internal static Task WriteErrorResponseAsync(HttpContext context, Exception ex)
+		{
+			context.Response.StatusCode = 500;
+			context.Response.ContentType = "application/json";
+
+			return context.Response.WriteAsync(JsonConvert.SerializeObject(new { statusCode = 500, message = ex.Message }));
+		}
+
 		internal virtual void Validate()
 		{
 			ValidateNullOrEmpty(Name, nameof(Name));
