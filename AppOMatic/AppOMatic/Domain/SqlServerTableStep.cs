@@ -91,42 +91,73 @@ namespace AppOMatic.Domain
 			switch(dobj.Method)
 			{
 				case RequestMethod.CreateItem:
-					await CreateItemAsync(dobj, command).ConfigureAwait(false);
-					break;
+					{
+						await CreateItemAsync(dobj, command).ConfigureAwait(false);
+						break;
+					}
+
 				case RequestMethod.CreateList:
-					await CreateItemsAsync(dobj, command).ConfigureAwait(false);
-					break;
+					{
+						await CreateItemsAsync(dobj, command).ConfigureAwait(false);
+						break;
+					}
+
 				case RequestMethod.DeleteItem:
-					await DeleteItemAsync(dobj, command).ConfigureAwait(false);
-					break;
+					{
+						await DeleteItemAsync(dobj, command).ConfigureAwait(false);
+						break;
+					}
+
 				case RequestMethod.DeleteList:
-					await DeleteItemsAsync(dobj, command).ConfigureAwait(false);
-					break;
+					{
+						await DeleteItemsAsync(dobj, command).ConfigureAwait(false);
+						break;
+					}
+
 				case RequestMethod.ReplaceItem:
-					throw new NotImplementedException();
-					break;
+					{
+						await UpdateItemAsync(dobj, command, true).ConfigureAwait(false);
+						break;
+					}
+
 				case RequestMethod.ReplaceList:
-					throw new NotImplementedException();
-					break;
+					{
+						await UpdateItemsAsync(dobj, command, true).ConfigureAwait(false);
+						break;
+					}
+
 				case RequestMethod.RetrieveItem:
-					await FetchByIdAsync(dobj, command).ConfigureAwait(false);
-					break;
+					{
+						await FetchByIdAsync(dobj, command).ConfigureAwait(false);
+						break;
+					}
+
 				case RequestMethod.RetrieveList:
-					if(dobj.ContainsKey("pageSize"))
 					{
-						await FetchPageAsync(dobj, command).ConfigureAwait(false);
+						if(dobj.ContainsKey("pageSize"))
+						{
+							await FetchPageAsync(dobj, command).ConfigureAwait(false);
+						}
+						else
+						{
+							await FetchAllAsync(dobj, command).ConfigureAwait(false);
+						}
+
+						break;
 					}
-					else
-					{
-						await FetchAllAsync(dobj, command).ConfigureAwait(false);
-					}
-					break;
+
 				case RequestMethod.UpdateItem:
-					throw new NotImplementedException();
-					break;
+					{
+						await UpdateItemAsync(dobj, command, false).ConfigureAwait(false);
+						break;
+					}
+
 				case RequestMethod.UpdateList:
-					throw new NotImplementedException();
-					break;
+					{
+						await UpdateItemsAsync(dobj, command, false).ConfigureAwait(false);
+						break;
+
+					}
 			}
 		}
 
@@ -150,6 +181,13 @@ namespace AppOMatic.Domain
 
 		private async Task FetchByIdAsync(DataObject dobj, SqlCommand command)
 		{
+			var id = dobj.Get<object>("id");
+
+			if(id == null)
+			{
+				throw new ArgumentNullException(nameof(id), "Required argument id was not provided");
+			}
+
 			PrepareFetchByIdQuery(dobj, command);
 
 			using(var dr = await command.ExecuteReaderAsync().ConfigureAwait(false))
@@ -322,7 +360,7 @@ namespace AppOMatic.Domain
 
 			if(items == null)
 			{
-				return;
+				throw new ArgumentNullException(nameof(items), "Argument items should contain an array of items to create");
 			}
 
 			foreach(var item in items)
@@ -354,6 +392,13 @@ namespace AppOMatic.Domain
 
 		private async Task DeleteItemAsync(DataObject dobj, SqlCommand command)
 		{
+			var id = dobj.Get<object>("id");
+
+			if(id == null)
+			{
+				throw new ArgumentNullException(nameof(id), "Required argument id was not provided");
+			}
+
 			PrepareDeleteItemQuery(dobj, command);
 			dobj["affectedRows"] = await command.ExecuteNonQueryAsync().ConfigureAwait(false);
 		}
@@ -377,8 +422,91 @@ namespace AppOMatic.Domain
 		{
 			var ids = dobj.GetSimpleArray("ids");
 
+			if(ids == null || ids.Count == 0)
+			{
+				throw new ArgumentNullException(nameof(ids), "Required argument ids was not provided");
+			}
+
 			PrepareDeleteItemsQuery(command, ids);
 			dobj["affectedRows"] = await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+		}
+
+		#endregion
+
+		#region Update
+
+		protected virtual void PrepareUpdateItemQuery(DataObject dobj, SqlCommand command, List<string> columns, bool replace)
+		{
+			var cols = new List<string>();
+
+			foreach(var col in columns)
+			{
+				if(col.ToLower() == "id")
+				{
+					continue;
+				}
+
+				if(dobj.Keys.Any(c => string.Equals(c, col, StringComparison.CurrentCultureIgnoreCase)))
+				{
+					cols.Add($"{col} = @{col}");
+				}
+				else if(replace)
+				{
+					cols.Add($"{col} = NULL");
+				}
+			}
+
+			command.CommandText = string.Format("UPDATE [{0}] SET {1} WHERE [Id] = @id", Name, string.Join(", ", cols));
+			PrepareParameters(dobj, command);
+		}
+
+		private async Task UpdateItemAsync(DataObject dobj, SqlCommand command, bool replace)
+		{
+			var id = dobj.Get<object>("id");
+
+			if(id == null)
+			{
+				throw new ArgumentNullException(nameof(id), "Required argument id was not provided");
+			}
+
+			if(dobj.Count == 1)
+			{
+				throw new ArgumentException("Cannot update entity without empty field information");
+			}
+
+			var columns = await GetTableColumnsAsync(command).ConfigureAwait(false);
+
+			PrepareUpdateItemQuery(dobj, command, columns, replace);
+
+			dobj["affectedRows"] = await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+		}
+
+		private async Task UpdateItemsAsync(DataObject dobj, SqlCommand command, bool replace)
+		{
+			var columns = await GetTableColumnsAsync(command).ConfigureAwait(false);
+			var items = dobj.GetArray("items");
+
+			if(items == null)
+			{
+				throw new ArgumentNullException(nameof(items), $"Argument items should contain an array of items to {(replace ? "replace" : "update")}");
+			}
+
+			var affectedRows = 0;
+
+			foreach(var item in items)
+			{
+				var d = new DataObject();
+
+				foreach(var kv in item)
+				{
+					d[kv.Key] = kv.Value;
+				}
+
+				PrepareUpdateItemQuery(d, command, columns, replace);
+				affectedRows += await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+			}
+
+			dobj["affectedRows"] = affectedRows;
 		}
 
 		#endregion
