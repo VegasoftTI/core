@@ -169,6 +169,8 @@ namespace AppOMatic.Domain
 			{
 				command.Parameters.AddWithValue(item.Key, item.Value);
 			}
+
+			dobj.Clear();
 		}
 
 		#region Retrieve
@@ -271,29 +273,45 @@ namespace AppOMatic.Domain
 			PrepareParameters(dobj, command);
 		}
 
+		protected virtual void PrepareCountQuery(DataObject dobj, SqlCommand command)
+		{
+			command.CommandText = $"SELECT COUNT(*) FROM [{Name}]";
+			PrepareParameters(dobj, command);
+		}
+
 		private async Task FetchAllAsync(DataObject dobj, SqlCommand command)
 		{
-			PrepareFetchAllQuery(dobj, command);
+			var count = dobj.Get<object>("count");
 
-			var result = new List<Dictionary<string, object>>();
-
-			using(var dr = await command.ExecuteReaderAsync().ConfigureAwait(false))
+			if(count == null)
 			{
-				while(await dr.ReadAsync().ConfigureAwait(false))
+				PrepareFetchAllQuery(dobj, command);
+
+				var result = new List<Dictionary<string, object>>();
+
+				using(var dr = await command.ExecuteReaderAsync().ConfigureAwait(false))
 				{
-					var row = new Dictionary<string, object>();
-
-					for(var ct = 0; ct < dr.FieldCount; ct++)
+					while(await dr.ReadAsync().ConfigureAwait(false))
 					{
-						row.Add(dr.GetName(ct).ToCamelCase(), dr.IsDBNull(ct) ? null : dr.GetValue(ct));
+						var row = new Dictionary<string, object>();
+
+						for(var ct = 0; ct < dr.FieldCount; ct++)
+						{
+							row.Add(dr.GetName(ct).ToCamelCase(), dr.IsDBNull(ct) ? null : dr.GetValue(ct));
+						}
+
+						result.Add(row);
 					}
-
-					result.Add(row);
 				}
-			}
 
-			dobj["items"] = result;
-			dobj.ResultStatusCode = result.Count > 0 ? HttpStatusCode.OK : HttpStatusCode.NoContent;
+				dobj["items"] = result;
+				dobj.ResultStatusCode = result.Count > 0 ? HttpStatusCode.OK : HttpStatusCode.NoContent;
+			}
+			else
+			{
+				PrepareCountQuery(dobj, command);
+				dobj["totalRows"] = await command.ExecuteScalarAsync().ConfigureAwait(false);
+			}
 		}
 
 		#endregion
