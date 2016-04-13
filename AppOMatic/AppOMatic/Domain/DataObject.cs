@@ -178,5 +178,31 @@ namespace AppOMatic.Domain
 
 			return result;
 		}
+
+		public List<object> GetSimpleArray(string key)
+		{
+			object value;
+
+			if(TryGetValue(key, out value) == false)
+			{
+				return null;
+			}
+
+			var jValue = value as JArray;
+
+			if(jValue == null)
+			{
+				return null;
+			}
+
+			var items = new List<object>();
+
+			foreach(var item in jValue)
+			{
+				items.Add(item.ToObject<object>());
+			}
+
+			return items;
+		}
 	}
 }

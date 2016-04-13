@@ -97,10 +97,10 @@ namespace AppOMatic.Domain
 					await CreateItemsAsync(dobj, command).ConfigureAwait(false);
 					break;
 				case RequestMethod.DeleteItem:
-					throw new NotImplementedException();
+					await DeleteItemAsync(dobj, command).ConfigureAwait(false);
 					break;
 				case RequestMethod.DeleteList:
-					throw new NotImplementedException();
+					await DeleteItemsAsync(dobj, command).ConfigureAwait(false);
 					break;
 				case RequestMethod.ReplaceItem:
 					throw new NotImplementedException();
@@ -340,6 +340,45 @@ namespace AppOMatic.Domain
 			}
 
 			dobj["items"] = items;
+		}
+
+		#endregion
+
+		#region Delete
+
+		protected virtual void PrepareDeleteItemQuery(DataObject dobj, SqlCommand command)
+		{
+			command.CommandText = $"DELETE FROM [{Name}] WHERE [Id] = @id";
+			PrepareParameters(dobj, command);
+		}
+
+		private async Task DeleteItemAsync(DataObject dobj, SqlCommand command)
+		{
+			PrepareDeleteItemQuery(dobj, command);
+			dobj["affectedRows"] = await command.ExecuteNonQueryAsync().ConfigureAwait(false);
+		}
+
+		protected virtual void PrepareDeleteItemsQuery(SqlCommand command, List<object> ids)
+		{
+			command.Parameters.Clear();
+
+			var paramNames = new List<string>();
+
+			for(var ct = 0; ct < ids.Count; ct++)
+			{
+				command.Parameters.AddWithValue($"p{ct}", ids[ct]);
+				paramNames.Add($"@p{ct}");
+			}
+
+			command.CommandText = $"DELETE FROM [{Name}] WHERE [Id] IN ({string.Join(",", paramNames)})";
+		}
+
+		private async Task DeleteItemsAsync(DataObject dobj, SqlCommand command)
+		{
+			var ids = dobj.GetSimpleArray("ids");
+
+			PrepareDeleteItemsQuery(command, ids);
+			dobj["affectedRows"] = await command.ExecuteNonQueryAsync().ConfigureAwait(false);
 		}
 
 		#endregion
